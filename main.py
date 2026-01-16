@@ -1,9 +1,4 @@
-"""
-Face Recognition Attendance System
-- Automatically starts webcam
-- Identifies known people and marks attendance
-- Auto-registers unknown people with captured images
-"""
+""" Face Recognition Attendance System """
 
 import cv2
 import numpy as np
@@ -12,12 +7,9 @@ from datetime import datetime
 import os
 import time
 
-
 class FaceRecognitionAttendance:
-    """Face Recognition Attendance System with auto-registration."""
     
     def __init__(self, dataset_path="dataset", attendance_dir="attendance_records"):
-        """Initialize the face recognition system."""
         self.dataset_path = dataset_path
         self.attendance_dir = attendance_dir
         
@@ -30,8 +22,8 @@ class FaceRecognitionAttendance:
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
         )
         self.face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-        
-        # Storage
+
+        # store
         self.face_names = {}
         self.label_counter = 0
         self.trained = False
@@ -45,15 +37,14 @@ class FaceRecognitionAttendance:
         
         # Recognition parameters
         self.confidence_threshold = 50
-        self.unknown_faces = {}  # Track unknown faces for registration
-        self.registration_frames = 10  # Frames needed for registration
+        self.unknown_faces = {}  # Track unknown faces for regi
+        self.registration_frames = 10  # Frames needed for regi
         
         # Load existing data
         self.load_dataset()
         self._load_today_attendance()
     
     def _load_today_attendance(self):
-        """Load existing attendance for today."""
         if os.path.exists(self.attendance_file):
             try:
                 df = pd.read_csv(self.attendance_file)
@@ -64,10 +55,7 @@ class FaceRecognitionAttendance:
                 print(f"Error loading attendance: {e}")
     
     def load_dataset(self):
-        """Load and train model with existing dataset."""
-        print("\n" + "="*60)
         print("Loading Face Dataset")
-        print("="*60)
         
         faces = []
         labels = []
@@ -131,12 +119,8 @@ class FaceRecognitionAttendance:
         print("="*60 + "\n")
     
     def register_new_person(self, face_image, face_roi_gray):
-        """Register a new person by capturing their face."""
-        print("\n" + "="*60)
+    
         print("NEW PERSON DETECTED - AUTO REGISTRATION")
-        print("="*60)
-        
-        # Get name via console (in real app, could be via GUI or ID card)
         person_name = input("\nEnter person's name (or press Enter to skip): ").strip()
         
         if not person_name:
@@ -172,12 +156,9 @@ class FaceRecognitionAttendance:
         return person_name
     
     def retrain_model_with_new_person(self, person_dir, label):
-        """Retrain model including the new person."""
-        # Load all existing training data
         faces = []
         labels = []
         
-        # Load from all person folders
         for person_label, person_name in self.face_names.items():
             person_path = os.path.join(self.dataset_path, person_name)
             
@@ -206,7 +187,6 @@ class FaceRecognitionAttendance:
             self.trained = True
     
     def mark_attendance(self, name):
-        """Mark attendance for a person."""
         if name in self.marked_today:
             return False
         
@@ -227,27 +207,24 @@ class FaceRecognitionAttendance:
             df.to_csv(self.attendance_file, index=False)
             self.marked_today.add(name)
             
-            print(f"✓ Attendance marked: {name} at {record['Time']}")
+            print(f"Attendance marked: {name} at {record['Time']}")
             return True
         except Exception as e:
             print(f"Error marking attendance: {e}")
             return False
     
     def start(self):
-        """Start the attendance system with webcam."""
-        print("\n" + "="*60)
         print("FACE RECOGNITION ATTENDANCE SYSTEM")
         print("="*60)
         print("Features:")
-        print("  - Auto-identify known people")
-        print("  - Auto-register unknown people")
-        print("  - Automatic attendance marking")
-        print("="*60)
+        print("Auto-identify known people")
+        print("Auto-register unknown people")
+        print("Automatic attendance marking")
+
         print(f"Known People: {len(self.face_names)}")
         print(f"Today's Attendance: {len(self.marked_today)}")
-        print("="*60 + "\n")
-        
-        # Start webcam
+  
+        #  webcam
         print("Starting webcam...")
         video_capture = cv2.VideoCapture(0)
         
@@ -258,13 +235,11 @@ class FaceRecognitionAttendance:
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         
-        print("✓ Webcam started successfully!")
+        print("Webcam started successfully.")
         print("\nControls:")
         print("  Q - Quit")
         print("  R - Register unknown person")
-        print("="*60 + "\n")
         
-        # Processing variables
         fps = 0
         frame_time = time.time()
         frame_count = 0
@@ -280,9 +255,8 @@ class FaceRecognitionAttendance:
                     break
                 
                 frame_count += 1
-                
-                # Process every Nth frame
-                if frame_count % process_every == 0:
+
+                if frame_count % process_every == 0:     # for Nth frame
                     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     faces = self.face_cascade.detectMultiScale(
                         gray, scaleFactor=1.3, minNeighbors=5, minSize=(100, 100)
@@ -293,12 +267,11 @@ class FaceRecognitionAttendance:
                         face_roi_resized = cv2.resize(face_roi, (200, 200))
                         
                         name = "Unknown"
-                        color = (0, 0, 255)  # Red
+                        color = (0, 0, 255) # red
                         confidence = 100
                         is_marked = False
                         
-                        # Try to recognize if model is trained
-                        if self.trained:
+                        if self.trained:   # if person's record is recognized , mark
                             label, conf = self.face_recognizer.predict(face_roi_resized)
                             
                             if conf < self.confidence_threshold:
@@ -307,17 +280,15 @@ class FaceRecognitionAttendance:
                                 is_marked = name in self.marked_today
                                 
                                 if is_marked:
-                                    color = (0, 255, 0)  # Green
+                                    color = (0, 255, 0)  # green
                                 else:
-                                    color = (255, 165, 0)  # Orange
-                                    # Mark attendance
+                                    color = (255, 165, 0)  # orange
                                     self.mark_attendance(name)
                         
-                        # Store unknown face for potential registration
+                        # Store unknown face 
                         if name == "Unknown":
                             pending_registration = (frame.copy(), face_roi_resized)
                         
-                        # Draw rectangle and text
                         cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
                         cv2.rectangle(frame, (x, y+h-70), (x+w, y+h), color, cv2.FILLED)
                         
@@ -331,7 +302,7 @@ class FaceRecognitionAttendance:
                         status = "Present" if is_marked else ("Detected" if name != "Unknown" else "Press R to Register")
                         cv2.putText(frame, status, (x+6, y+h-6), font, 0.4, (255, 255, 255), 1)
                 
-                # Calculate FPS
+                # FPS calculationn
                 current_time = time.time()
                 if current_time - frame_time >= 1.0:
                     fps = frame_count / (current_time - frame_time)
@@ -349,11 +320,9 @@ class FaceRecognitionAttendance:
                 cv2.putText(frame, f"Known: {len(self.face_names)} | Today: {len(self.marked_today)}", (20, 85), font, 0.5, (255, 255, 255), 1)
                 cv2.putText(frame, "Q: Quit | R: Register", (20, 105), font, 0.4, (255, 255, 255), 1)
                 
-                # Show frame
                 cv2.imshow('Face Recognition Attendance System', frame)
                 
-                # Handle key presses
-                key = cv2.waitKey(1) & 0xFF
+                key = cv2.waitKey(1) & 0xFF  # Handle key presses
                 
                 if key == ord('q') or key == ord('Q'):
                     print("\nShutting down...")
@@ -376,14 +345,9 @@ class FaceRecognitionAttendance:
             video_capture.release()
             cv2.destroyAllWindows()
             
-            print("\n" + "="*60)
-            print("SESSION SUMMARY")
-            print("="*60)
             print(f"Total People Known: {len(self.face_names)}")
             print(f"Attendance Marked Today: {len(self.marked_today)}")
             print(f"Attendance File: {self.attendance_file}")
-            print("="*60 + "\n")
-
 
 if __name__ == "__main__":
     system = FaceRecognitionAttendance()
